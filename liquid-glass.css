@@ -1,0 +1,831 @@
+/* Liquid Glass for Jellyfin
+ * https://github.com/xditya/jellyfin-liquid-glass · MIT
+ *
+ * A Jellyfin 12 web theme after Apple's Liquid Glass. Content first, controls on glass: artwork
+ * stays sharp and edge-to-edge, while navigation, menus, dialogs and player controls float above
+ * it on a translucent material.
+ *
+ * Install: Dashboard → General → Custom CSS. See the README for the one-line @import.
+ * Tweak:   override any --lg-* variable in section 1 after the import.
+ *
+ * No external requests: type is the system UI font, which on iPhone, iPad and Mac is SF Pro.
+ * CSS can't bend light the way Liquid Glass does (SVG displacement doesn't work in Safari), so
+ * the material is built from what every browser supports: background blur and saturation, a
+ * top-lit rim, and depth from layered shadows.
+ */
+
+/* ── 1. Knobs ─────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+    /* Ground: near-black with two faint coloured lights, so glass has something to pick up. */
+    --lg-bg: #07080b;
+    --lg-light-a: rgba(64, 132, 255, 0.11);
+    --lg-light-b: rgba(255, 128, 72, 0.05);
+
+    /* Material */
+    --lg-tint: rgba(30, 32, 40, 0.40);           /* bars and controls over artwork */
+    --lg-tint-solid: rgba(24, 26, 33, 0.72);     /* menus and dialogs: text needs calm behind it */
+    --lg-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.05) 38%,
+                rgba(255, 255, 255, 0.015) 100%);
+    --lg-edge: rgba(255, 255, 255, 0.12);
+    --lg-rim: rgba(255, 255, 255, 0.28);          /* the lit top edge */
+    --lg-blur: 24px;
+    --lg-thin: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+    --lg-thin-edge: rgba(255, 255, 255, 0.10);
+    --lg-thin-rim: rgba(255, 255, 255, 0.16);
+    --lg-saturate: 185%;
+    --lg-depth: 0 12px 32px rgba(0, 0, 0, 0.36), 0 2px 8px rgba(0, 0, 0, 0.24);
+
+    /* Type: Apple's dark-mode label colours */
+    --lg-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui,
+               "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", sans-serif;
+    --lg-label: #f5f5f7;
+    --lg-label-2: rgba(235, 235, 245, 0.64);
+    --lg-label-3: rgba(235, 235, 245, 0.38);
+
+    /* Colour: Apple system blue (dark appearance) */
+    --lg-accent: #0a84ff;
+    --lg-accent-hi: #409cff;
+    --lg-accent-soft: rgba(10, 132, 255, 0.20);
+    --lg-danger: #ff453a;
+
+    /* Shape: concentric — an inner radius is its container's minus the gap between them. */
+    --lg-r-panel: 22px;
+    --lg-r-card: 14px;
+    --lg-r-control: 12px;
+    --lg-r-pill: 999px;
+
+    /* Motion: quick, ease-out, interruptible. Nothing that runs on every keypress animates. */
+    --lg-ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --lg-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+    --lg-fast: 140ms;
+    --lg-base: 220ms;
+}
+
+/* ── 2. Bridge onto Jellyfin 12's palette ───────────────────────────────────────────────────
+ * Newer screens are MUI and read --jf-palette-*; re-declared here so every MUI component
+ * picks up the theme at the source instead of being overridden one by one. */
+
+:root,
+:root[data-theme] {
+    --jf-palette-background-default: var(--lg-bg);
+    --jf-palette-background-defaultChannel: 7 8 11;
+    --jf-palette-background-paper: var(--lg-tint-solid);
+    --jf-palette-background-paperChannel: 24 26 33;
+    --jf-palette-AppBar-defaultBg: transparent;
+    --jf-palette-AppBar-transparentBg: transparent;
+    --jf-palette-text-primary: var(--lg-label);
+    --jf-palette-text-primaryChannel: 245 245 247;
+    --jf-palette-text-secondary: var(--lg-label-2);
+    --jf-palette-text-secondaryChannel: 235 235 245;
+    --jf-palette-text-disabled: var(--lg-label-3);
+    --jf-palette-primary-main: var(--lg-accent);
+    --jf-palette-primary-mainChannel: 10 132 255;
+    --jf-palette-primary-light: var(--lg-accent-hi);
+    --jf-palette-primary-dark: #0060df;
+    --jf-palette-primary-contrastText: #fff;
+    --jf-palette-secondary-main: var(--lg-accent);
+    --jf-palette-secondary-mainChannel: 10 132 255;
+    --jf-palette-error-main: var(--lg-danger);
+    --jf-palette-error-mainChannel: 255 69 58;
+    --jf-palette-divider: rgba(255, 255, 255, 0.08);
+    --jf-palette-dividerChannel: 255 255 255;
+    --jf-palette-action-hover: rgba(255, 255, 255, 0.07);
+    --jf-palette-action-selected: var(--lg-accent-soft);
+    --jf-palette-action-focus: var(--lg-accent-soft);
+    --jf-palette-FilledInput-bg: rgba(255, 255, 255, 0.06);
+    --jf-palette-SnackbarContent-bg: var(--lg-tint-solid);
+    --jf-palette-SnackbarContent-color: var(--lg-label);
+    --jf-shape-borderRadius: 12px;
+}
+
+/* ── 3. Type and ground ─────────────────────────────────────────────────────────────────── */
+
+html,
+body {
+    font-family: var(--lg-font);
+    -webkit-font-smoothing: antialiased;
+    color: var(--lg-label);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* During playback Jellyfin marks the document transparent so the video behind it shows through;
+ * painting a ground there would black out the picture. */
+html:not(.transparentDocument),
+html:not(.transparentDocument) body {
+    background: var(--lg-bg);
+}
+
+/* MUI declares its own font rather than inheriting. Icon fonts are left alone. */
+[class*="Mui"]:not(.MuiIcon-root):not(.material-icons) {
+    font-family: inherit;
+}
+
+.backgroundContainer:not(.withBackdrop):not(.backgroundContainer-transparent) {
+    background:
+        radial-gradient(1100px 680px at 12% -12%, var(--lg-light-a), transparent 62%),
+        radial-gradient(900px 620px at 105% 8%, var(--lg-light-b), transparent 58%),
+        var(--lg-bg) !important;
+}
+
+.sectionTitle,
+.sectionTitle-cards,
+.pageTitle {
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    color: var(--lg-label);
+}
+
+.sectionTitle-cards {
+    font-size: 1.3rem;
+}
+
+.sectionTitle .material-icons,
+.sectionTitleTextButton .material-icons {
+    color: var(--lg-label-3);
+}
+
+.secondaryText,
+.cardText-secondary,
+.itemMiscInfo,
+.fieldDescription {
+    color: var(--lg-label-2) !important;
+}
+
+::selection {
+    background: var(--lg-accent-soft);
+}
+
+/* ── 4. Materials ──────────────────────────────────────────────────────────────────────────
+ * Two weights, as in Apple's system: a thick material for panels that hold text (menus, dialogs,
+ * the drawer, player controls) and a thin, lighter one for small controls that float over content.
+ * Glass is never stacked on glass, and blur is never spent on cards or rows. */
+
+.MuiMenu-paper,
+.MuiPopover-paper,
+.MuiDialog-paper,
+.MuiDrawer-paper,
+.mainDrawer,
+.actionSheet,
+.dialog:not(.videoPlayerContainer):not(.fullscreen-dialog),
+.MuiSnackbarContent-root,
+.toast,
+.videoOsdBottom .osdControls,
+.upNextContainer {
+    background: var(--lg-sheen), var(--lg-tint-solid) !important;
+    -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+    backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+    border: 1px solid var(--lg-edge);
+    box-shadow: inset 0 1px 0 var(--lg-rim), var(--lg-depth);
+}
+
+header.MuiAppBar-root .MuiToolbar-root:first-child > div:not(:empty):not(:last-child),
+header.MuiAppBar-root .MuiToolbar-root:first-child > .MuiIconButton-root:first-child,
+header.MuiAppBar-root .MuiToolbar-root:not(:first-child),
+.emby-scrollbuttons-button,
+.detailButton {
+    background: var(--lg-thin) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--lg-thin-edge);
+    box-shadow: inset 0 1px 0 var(--lg-thin-rim), 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+/* ── 5. Floating navigation ──────────────────────────────────────────────────────────────────
+ * No bar. The controls float as separate glass groups (navigation, actions) and the content
+ * fades out underneath them, so there is no hard edge where the page meets the chrome. */
+
+header.MuiAppBar-root {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+header.MuiAppBar-root::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 -28px;
+    background: linear-gradient(180deg, rgba(7, 8, 11, 0.78) 0%, rgba(7, 8, 11, 0.45) 55%, transparent 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+header.MuiAppBar-root .MuiToolbar-root {
+    min-height: 40px !important;
+    margin: 4px 12px;
+    padding-inline: 0 !important;
+    gap: 8px;
+}
+
+header.MuiAppBar-root .MuiToolbar-root:first-child {
+    height: 40px;
+    background: transparent !important;
+    border: 0;
+    box-shadow: none;
+}
+
+/* Each group is its own capsule; one icon alone becomes a circle. */
+header.MuiAppBar-root .MuiToolbar-root:first-child > div:not(:empty):not(:last-child) {
+    height: 40px;
+    min-width: 40px;
+    padding-inline: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--lg-r-pill);
+}
+
+/* On phones the menu button stands alone at the start of the bar: a glass circle. */
+header.MuiAppBar-root .MuiToolbar-root:first-child > .MuiIconButton-root:first-child {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* Jellyfin lets the action group stretch to fill the bar; a capsule should hug its icons. */
+header.MuiAppBar-root .MuiToolbar-root:first-child > div:nth-child(2) {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+/* The avatar is already a circle; it sits on its own without a pane behind it. */
+header.MuiAppBar-root .MuiToolbar-root:first-child > div:last-child .MuiIconButton-root {
+    padding: 0;
+}
+
+header.MuiAppBar-root .MuiAvatar-root {
+    width: 38px;
+    height: 38px;
+    box-shadow: 0 0 0 1px var(--lg-thin-edge), 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+header.MuiAppBar-root .MuiIconButton-root {
+    color: var(--lg-label);
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+}
+
+/* Library toolbars wrap onto two rows on narrow screens; a full pill would pinch them. */
+header.MuiAppBar-root .MuiToolbar-root:not(:first-child) {
+    height: auto;
+    padding: 2px 6px !important;
+    flex-wrap: wrap;
+    border-radius: var(--lg-r-panel);
+}
+
+header.MuiAppBar-root .MuiButton-root {
+    border-radius: var(--lg-r-pill);
+    padding: 4px 12px;
+    text-transform: none;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--lg-label-2);
+    transition: background-color var(--lg-fast) var(--lg-ease), color var(--lg-fast) var(--lg-ease);
+}
+
+header.MuiAppBar-root .MuiButton-root[aria-current="page"],
+header.MuiAppBar-root .MuiButton-root.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--lg-label);
+}
+
+/* The legacy header (still used on some pages) gets the same treatment. */
+.skinHeader.skinHeader-withBackground {
+    background: transparent !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* ── 6. Cards ───────────────────────────────────────────────────────────────────────────────── */
+
+.cardScalable,
+.cardImageContainer,
+.cardContent,
+.cardOverlayContainer,
+.blurhash-canvas,
+.cardImage {
+    border-radius: var(--lg-r-card) !important;
+}
+
+.cardScalable {
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    transition: transform var(--lg-base) var(--lg-ease), box-shadow var(--lg-base) var(--lg-ease);
+}
+
+/* A hairline of light along the artwork's edge, like a pane of glass sitting on it. */
+.cardScalable::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    pointer-events: none;
+}
+
+.cardText {
+    color: var(--lg-label);
+    font-weight: 500;
+}
+
+.cardText-first {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+/* Overlay buttons on a card (play, more): small smoked-glass circles. Dark rather than light,
+ * because they sit on bright artwork; no outer shadow, so they don't read as holes in the poster. */
+.cardOverlayButton {
+    background: rgba(16, 16, 20, 0.34) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow: none !important;
+    border-radius: 50% !important;
+    color: #fff !important;
+    padding: 0.4em !important;
+    margin: 0.45em !important;
+}
+
+.cardOverlayButton .cardOverlayButtonIcon {
+    font-size: 1.25em !important;
+}
+
+/* Cast and crew: round portraits, as in Apple's TV app. */
+.personCard .cardPadder {
+    padding-bottom: 100% !important;
+}
+
+.personCard .cardScalable,
+.personCard .cardImageContainer,
+.personCard .cardContent,
+.personCard .blurhash-canvas {
+    border-radius: 50% !important;
+}
+
+/* Progress on cards and rows */
+.itemProgressBarForeground,
+.playbackProgressBar-foreground,
+.MuiLinearProgress-bar {
+    background-color: var(--lg-accent) !important;
+}
+
+.itemProgressBar,
+.cardProgressBar {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-radius: var(--lg-r-pill);
+    overflow: hidden;
+}
+
+.countIndicator,
+.playedIndicator {
+    background: var(--lg-accent) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* ── 7. Item details ──────────────────────────────────────────────────────────────────────── */
+
+/* The backdrop runs full-bleed and dissolves into the page instead of ending in a hard edge. */
+.itemBackdrop {
+    -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+}
+
+.detailRibbon,
+.detailPagePrimaryContainer,
+.detailPageWrapperContainer,
+.layout-desktop .detailPagePrimaryContainer,
+.noBackdropTransparency .detailPageWrapperContainer {
+    background: transparent !important;
+}
+
+.itemName.infoText {
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    color: var(--lg-label);
+}
+
+.detailImageContainer .card,
+.detailImageContainer .cardScalable {
+    border-radius: 18px !important;
+}
+
+/* Track pickers and overview: one glass panel. */
+.detailSection,
+.trackSelections {
+    border-radius: var(--lg-r-panel) !important;
+}
+
+.layout-desktop .detailPagePrimaryContainer .detailSection {
+    background: var(--lg-sheen), var(--lg-tint) !important;
+    -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+    backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+    border: 1px solid var(--lg-edge);
+    box-shadow: inset 0 1px 0 var(--lg-rim), var(--lg-depth);
+    padding: 1rem 1.25rem !important;
+}
+
+.overview,
+.detail-clamp-text {
+    color: var(--lg-label-2);
+    line-height: 1.55;
+}
+
+.itemDetailsGroup .label,
+.detailsGroupItem .label {
+    color: var(--lg-label-3);
+}
+
+.itemDetailsGroup .content a,
+.itemTags a,
+.itemExternalLinks a {
+    color: var(--lg-label) !important;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+/* Action buttons: glass circles, with Play as the one filled, coloured control. */
+.mainDetailButtons {
+    gap: 10px;
+}
+
+.detailButton {
+    border-radius: 50% !important;
+    width: 46px;
+    height: 46px;
+    margin: 0 !important;
+    color: var(--lg-label) !important;
+}
+
+.detailButton .detailButton-content {
+    padding: 0 !important;
+}
+
+.mainDetailButtons .btnPlay,
+.mainDetailButtons .btnResume {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%),
+                var(--lg-accent) !important;
+    border-color: rgba(255, 255, 255, 0.24);
+    color: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 24px rgba(10, 132, 255, 0.35);
+}
+
+/* ── 8. Controls ─────────────────────────────────────────────────────────────────────────── */
+
+.raised,
+.button-submit,
+.emby-button.raised,
+.MuiButton-contained {
+    border-radius: var(--lg-r-pill) !important;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: -0.01em;
+}
+
+.button-submit,
+.emby-button.raised.button-submit,
+.MuiButton-containedPrimary {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 55%),
+                var(--lg-accent) !important;
+    color: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px rgba(10, 132, 255, 0.28);
+    border: 0;
+}
+
+.raised:not(.button-submit):not(.button-delete),
+.button-cancel {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: var(--lg-label) !important;
+}
+
+.button-delete {
+    background: var(--lg-danger) !important;
+    color: #fff !important;
+}
+
+.emby-input,
+.emby-textarea,
+.emby-select-withcolor,
+.emby-select,
+.MuiOutlinedInput-root,
+.MuiFilledInput-root,
+.searchfields-icon + .emby-input {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    border-radius: var(--lg-r-control) !important;
+    color: var(--lg-label) !important;
+    transition: border-color var(--lg-fast) var(--lg-ease), box-shadow var(--lg-fast) var(--lg-ease);
+}
+
+.emby-input:focus,
+.emby-textarea:focus,
+.emby-select:focus,
+.MuiOutlinedInput-root.Mui-focused {
+    border-color: var(--lg-accent) !important;
+    box-shadow: 0 0 0 3px var(--lg-accent-soft);
+    outline: none;
+}
+
+.emby-select-withcolor,
+.trackSelections .selectContainer select {
+    padding-right: 2.2em !important;
+    text-overflow: ellipsis;
+}
+
+.trackSelections {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+    border: 0 !important;
+}
+
+.emby-checkbox:checked + span + .checkboxOutline,
+.MuiCheckbox-root.Mui-checked,
+.MuiSwitch-switchBase.Mui-checked {
+    color: var(--lg-accent) !important;
+    border-color: var(--lg-accent) !important;
+}
+
+.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+    background-color: #30d158 !important;
+    opacity: 1 !important;
+}
+
+.listItem,
+.MuiListItemButton-root,
+.MuiMenuItem-root {
+    border-radius: 10px;
+}
+
+.MuiMenu-list {
+    padding: 6px !important;
+}
+
+.MuiMenuItem-root:hover,
+.MuiListItemButton-root:hover,
+.listItem-button:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.MuiMenuItem-root.Mui-selected,
+.MuiListItemButton-root.Mui-selected,
+.navMenuOption-selected {
+    background: var(--lg-accent-soft) !important;
+}
+
+/* Scroll arrows on rows */
+.emby-scrollbuttons-button {
+    border-radius: 50% !important;
+    color: var(--lg-label) !important;
+}
+
+/* The library's A–Z rail */
+.MuiToggleButtonGroup-root.MuiToggleButtonGroup-vertical,
+.alphaPicker {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--lg-r-pill);
+    padding: 4px 0;
+}
+
+/* Thin, quiet scrollbars */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+}
+
+/* ── 9. Menus, dialogs, drawer ─────────────────────────────────────────────────────────────── */
+
+.MuiMenu-paper,
+.MuiPopover-paper,
+.MuiDialog-paper,
+.actionSheet,
+.dialog:not(.videoPlayerContainer):not(.fullscreen-dialog) {
+    border-radius: var(--lg-r-panel) !important;
+    overflow: hidden;
+}
+
+.formDialogHeader,
+.formDialogFooter {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dialogBackdropOpened,
+.MuiBackdrop-root:not(.MuiBackdrop-invisible) {
+    background: rgba(0, 0, 0, 0.42) !important;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+/* Menus appear from 96%, never from nothing, and only fade/scale — so they stay interruptible. */
+.MuiMenu-paper,
+.MuiPopover-paper {
+    transform-origin: top right;
+    animation: lg-appear var(--lg-base) var(--lg-ease);
+}
+
+@keyframes lg-appear {
+    from { opacity: 0; transform: scale(0.96); }
+}
+
+/* The navigation drawer floats as a sheet with the screen's own margin around it. */
+.mainDrawer,
+.MuiDrawer-paper {
+    margin: 8px;
+    height: calc(100% - 16px) !important;
+    border-radius: var(--lg-r-panel) !important;
+}
+
+/* ── 10. Player ──────────────────────────────────────────────────────────────────────────────
+ * Controls float as a glass capsule over the video; the video itself is never blurred. */
+
+.videoOsdBottom {
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.55), transparent) !important;
+}
+
+.videoOsdBottom .osdControls {
+    margin: 0 auto 14px;
+    max-width: 1100px;
+    padding: 8px 16px !important;
+    border-radius: 28px;
+}
+
+.osdPositionSlider .mdl-slider-background-lower,
+.mdl-slider-background-lower {
+    background: var(--lg-accent) !important;
+}
+
+/* ── 11. Interaction, per input ──────────────────────────────────────────────────────────── */
+
+/* Mouse and trackpad: artwork lifts toward you. */
+@media (hover: hover) and (pointer: fine) {
+    header.MuiAppBar-root .MuiButton-root:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--lg-label);
+    }
+
+    .card-hoverable:hover .cardScalable {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    }
+
+    .detailButton:hover,
+    .emby-scrollbuttons-button:hover,
+    .cardOverlayButton:hover {
+        background: var(--lg-sheen), rgba(255, 255, 255, 0.16) !important;
+    }
+
+    .button-submit:hover,
+    .mainDetailButtons .btnPlay:hover {
+        filter: brightness(1.08);
+    }
+}
+
+/* Touch: no hover lifts (they'd stick after a tap); a short press-in instead. */
+@media (hover: none), (pointer: coarse) {
+    .card:active .cardScalable,
+    .detailButton:active,
+    .raised:active,
+    .button-submit:active,
+    .MuiButton-root:active,
+    .MuiIconButton-root:active {
+        transform: scale(0.97);
+        transition-duration: 100ms;
+    }
+}
+
+.detailButton,
+.raised,
+.button-submit,
+.MuiButton-root,
+.MuiIconButton-root {
+    transition: transform var(--lg-fast) var(--lg-ease), background-color var(--lg-fast) var(--lg-ease),
+                filter var(--lg-fast) var(--lg-ease);
+}
+
+/* Keyboard and TV remote: a clear accent ring, never removed without a replacement. */
+:focus-visible {
+    outline: 2px solid var(--lg-accent);
+    outline-offset: 2px;
+}
+
+.layout-tv .card:focus .cardScalable,
+.layout-tv .card.show-focus:focus .cardScalable {
+    box-shadow: 0 0 0 3px var(--lg-label), 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ── 12. Responsive ───────────────────────────────────────────────────────────────────────── */
+
+/* Phones: a slimmer capsule closer to the edges, tighter corners, lighter blur. */
+@media (max-width: 600px) {
+    :root {
+        --lg-r-panel: 20px;
+        --lg-r-card: 12px;
+        --lg-blur: 18px;
+    }
+
+    header.MuiAppBar-root .MuiToolbar-root {
+        margin: 4px 8px;
+    }
+
+    .sectionTitle-cards {
+        font-size: 1.15rem;
+    }
+
+    .detailButton {
+        width: 44px;
+        height: 44px;
+    }
+
+    .mainDrawer,
+    .MuiDrawer-paper {
+        margin: 6px;
+        height: calc(100% - 12px) !important;
+    }
+
+    .videoOsdBottom .osdControls {
+        margin: 0 8px 10px;
+        border-radius: 22px;
+    }
+}
+
+/* Mobile layout's details: the panel spans the width, with the screen margin around it.
+ * Track pickers sit inside that panel, so they stay flat rather than stacking a second pane. */
+.layout-mobile .detailPagePrimaryContainer > .detailSection,
+.layout-mobile .detailPageContent > .detailSection:first-child {
+    background: var(--lg-sheen), var(--lg-tint) !important;
+    -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+    backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate));
+    border: 1px solid var(--lg-edge);
+    box-shadow: inset 0 1px 0 var(--lg-rim);
+    padding: 0.85rem 1rem !important;
+}
+
+/* iPhone notch and home indicator */
+@supports (padding: env(safe-area-inset-top)) {
+    .layout-mobile header.MuiAppBar-root {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    .videoOsdBottom .osdControls {
+        margin-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+}
+
+/* TV layout: fewer blurred layers for weaker hardware, larger corners for ten-foot viewing. */
+.layout-tv {
+    --lg-blur: 12px;
+    --lg-r-card: 16px;
+}
+
+/* ── 13. Accessibility and fallbacks ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        transition-duration: 1ms !important;
+    }
+
+    .card-hoverable:hover .cardScalable,
+    .card:active .cardScalable {
+        transform: none !important;
+    }
+}
+
+/* Asked for less transparency, or a browser without backdrop blur: solid surfaces. */
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --lg-tint: rgba(28, 30, 38, 0.97);
+        --lg-tint-solid: rgba(28, 30, 38, 0.98);
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root {
+        --lg-tint: rgba(28, 30, 38, 0.94);
+        --lg-tint-solid: rgba(28, 30, 38, 0.97);
+    }
+}
+
+@media (prefers-contrast: more) {
+    :root {
+        --lg-edge: rgba(255, 255, 255, 0.4);
+        --lg-label-2: rgba(235, 235, 245, 0.85);
+    }
+}
