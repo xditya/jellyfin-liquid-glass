@@ -37,6 +37,13 @@ dialogs and player.
 - **Loads nothing from outside your server.** The theme is one CSS file with no web fonts. It uses
   your device's own font, which is SF Pro on iPhone, iPad and Mac.
 
+## Works with Jellyfin Enhanced
+
+If you use the [Jellyfin Enhanced](https://github.com/n00bcodr/Jellyfin-Enhanced) plugin, its poster
+quality badges are restyled to match: one row of small smoked-glass chips instead of a stack of
+coloured stickers. 4K, HDR, Dolby Vision and Atmos keep a blue tint, and the video codec chip is
+hidden. Nothing changes if you don't have the plugin.
+
 ## Install
 
 You need admin access to your Jellyfin server. Every option ends up in the same place:

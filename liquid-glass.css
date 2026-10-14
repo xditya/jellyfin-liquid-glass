@@ -669,7 +669,55 @@ header.MuiAppBar-root .MuiButton-root.active {
     background: var(--lg-accent) !important;
 }
 
-/* ── 11. Interaction, per input ──────────────────────────────────────────────────────────── */
+/* ── 11. Jellyfin Enhanced ────────────────────────────────────────────────────────────────────
+ * Optional: styles the poster badges of the Jellyfin Enhanced plugin, if it is installed, so they
+ * read as part of the poster instead of a stack of coloured stickers. One row of small smoked-glass
+ * chips; the video codec chip is hidden because resolution and audio are what decide a pick. */
+
+.quality-overlay-container {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px !important;
+    max-width: calc(100% - 16px);
+}
+
+/* Doubled classes: the plugin colours each badge with an !important rule keyed on data-quality. */
+.quality-overlay-container.quality-overlay-container .quality-overlay-label.quality-overlay-label {
+    background: rgba(16, 16, 20, 0.46) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    backdrop-filter: blur(10px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    color: #fff !important;
+    font: 600 10px/1 var(--lg-font) !important;
+    font-variant: normal !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    padding: 4px 6px !important;
+    margin: 0 !important;
+}
+
+/* 4K, HDR and Dolby Vision are the badges worth a glance: they keep a tint. */
+.quality-overlay-container.quality-overlay-container .quality-overlay-label.quality-overlay-label:is(
+    [data-quality="4K"], [data-quality="8K"], [data-quality="HDR"], [data-quality="HDR10"],
+    [data-quality="HDR10+"], [data-quality="Dolby Vision"], [data-quality="ATMOS"]) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 60%),
+                rgba(10, 132, 255, 0.55) !important;
+}
+
+.quality-overlay-container .quality-overlay-label.video-format {
+    display: none !important;
+}
+
+/* The details page poster is large; its chips can be too. */
+.detailImageContainer .quality-overlay-container .quality-overlay-label.quality-overlay-label {
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+}
+
+/* ── 12. Interaction, per input ──────────────────────────────────────────────────────────── */
 
 /* Mouse and trackpad: artwork lifts toward you. */
 @media (hover: hover) and (pointer: fine) {
@@ -728,7 +776,7 @@ header.MuiAppBar-root .MuiButton-root.active {
     box-shadow: 0 0 0 3px var(--lg-label), 0 18px 40px rgba(0, 0, 0, 0.5);
 }
 
-/* ── 12. Responsive ───────────────────────────────────────────────────────────────────────── */
+/* ── 13. Responsive ───────────────────────────────────────────────────────────────────────── */
 
 /* Phones: a slimmer capsule closer to the edges, tighter corners, lighter blur. */
 @media (max-width: 600px) {
@@ -792,7 +840,7 @@ header.MuiAppBar-root .MuiButton-root.active {
     --lg-r-card: 16px;
 }
 
-/* ── 13. Accessibility and fallbacks ─────────────────────────────────────────────────────── */
+/* ── 14. Accessibility and fallbacks ─────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
     *,
