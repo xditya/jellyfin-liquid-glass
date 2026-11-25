@@ -44,6 +44,14 @@ quality badges are restyled to match: one row of small smoked-glass chips instea
 coloured stickers. 4K, HDR, Dolby Vision and Atmos keep a blue tint, and the video codec chip is
 hidden. Nothing changes if you don't have the plugin.
 
+## Works with Media Bar
+
+The [Media Bar](https://github.com/IAmParadox27/jellyfin-plugin-media-bar) slideshow at the top of
+the home page gets the same buttons as a details page: Play is the one blue pill, and Details and
+Favourite are glass circles. On a phone its line of facts stays on one row. "1 Season" and long age
+ratings no longer break onto a hidden second line, and the genres shorten with an ellipsis when
+space runs out. Nothing changes if you don't have the plugin.
+
 ## Install
 
 You need admin access to your Jellyfin server. Every option ends up in the same place:

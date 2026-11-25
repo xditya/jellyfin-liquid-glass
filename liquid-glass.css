@@ -717,7 +717,70 @@ header.MuiAppBar-root .MuiButton-root.active {
     padding: 5px 8px !important;
 }
 
-/* ── 12. Interaction, per input ──────────────────────────────────────────────────────────── */
+/* ── 12. Media Bar ──────────────────────────────────────────────────────────────────────────────
+ * Optional: the slideshow the Media Bar plugin puts at the top of the home page. Its Play and
+ * Details buttons carry Jellyfin's own `detailButton` class, so the glass circles of section 7
+ * caught them and squashed the wide Play pill into an ellipse. Here they follow the details page
+ * instead: Play the one filled, coloured pill, Details and Favourite glass circles. The
+ * #slides-container prefix outranks section 7, so nothing there needs an exception. */
+
+#slides-container .play-button {
+    width: auto;
+    padding-inline: 1.4em;
+    border-radius: 999px !important;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%),
+                var(--lg-accent) !important;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 24px rgba(10, 132, 255, 0.35);
+}
+
+#slides-container .detail-button,
+#slides-container .favorite-button {
+    background: var(--lg-thin) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--lg-thin-edge);
+    box-shadow: inset 0 1px 0 var(--lg-thin-rim), 0 2px 12px rgba(0, 0, 0, 0.18);
+    color: var(--lg-label) !important;
+}
+
+#slides-container .favorite-button.favorited {
+    border-color: rgba(255, 69, 58, 0.45);
+    color: #ff453a !important;
+}
+
+/* The facts under the logo are one row that can't wrap on a phone, each in a fixed-height box, so
+ * "1 Season" or a rating like "IN-U/A 13+" broke onto a second line that was cut off. Each fact
+ * stays on one line; the genres give way first and end in an ellipsis. */
+#slides-container .spec-line > * {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* A block, so the ellipsis works; the line height fills the box to keep it level with the others. */
+#slides-container .spec-line > .spec-genre {
+    display: block;
+    padding-block: 0;
+    line-height: calc(1.7em - 2px);
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #slides-container .play-button:hover {
+        filter: brightness(1.08);
+    }
+
+    #slides-container .detail-button:hover,
+    #slides-container .favorite-button:hover {
+        background: var(--lg-sheen), rgba(255, 255, 255, 0.16) !important;
+    }
+}
+
+/* ── 13. Interaction, per input ──────────────────────────────────────────────────────────── */
 
 /* Mouse and trackpad: artwork lifts toward you. */
 @media (hover: hover) and (pointer: fine) {
@@ -776,7 +839,7 @@ header.MuiAppBar-root .MuiButton-root.active {
     box-shadow: 0 0 0 3px var(--lg-label), 0 18px 40px rgba(0, 0, 0, 0.5);
 }
 
-/* ── 13. Responsive ───────────────────────────────────────────────────────────────────────── */
+/* ── 14. Responsive ───────────────────────────────────────────────────────────────────────── */
 
 /* Phones: a slimmer capsule closer to the edges, tighter corners, lighter blur. */
 @media (max-width: 600px) {
@@ -840,7 +903,7 @@ header.MuiAppBar-root .MuiButton-root.active {
     --lg-r-card: 16px;
 }
 
-/* ── 14. Accessibility and fallbacks ─────────────────────────────────────────────────────── */
+/* ── 15. Accessibility and fallbacks ─────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
     *,
