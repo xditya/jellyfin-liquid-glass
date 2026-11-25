@@ -48,9 +48,14 @@ hidden. Nothing changes if you don't have the plugin.
 
 The [Media Bar](https://github.com/IAmParadox27/jellyfin-plugin-media-bar) slideshow at the top of
 the home page gets the same buttons as a details page: Play is the one blue pill, and Details and
-Favourite are glass circles. On a phone its line of facts stays on one row. "1 Season" and long age
-ratings no longer break onto a hidden second line, and the genres shorten with an ellipsis when
-space runs out. Nothing changes if you don't have the plugin.
+Favourite are glass circles. The title lines up with the rows below it, and the artwork deepens into
+the page colour behind them. On a phone the plugin's frosted box around the title is gone, so the
+artwork shows edge to edge. Its line of facts stays on one row: "1 Season" and long age ratings no
+longer break onto a hidden second line, and the genres shorten with an ellipsis when space runs
+out. Nothing changes if you don't have the plugin.
+
+The rows from [Home Screen Sections](https://github.com/IAmParadox27/jellyfin-plugin-home-sections)
+need nothing extra; they use Jellyfin's own cards and pick up the theme as they are.
 
 ## Install
 
